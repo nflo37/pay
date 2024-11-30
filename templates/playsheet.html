@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="playsheet-container">
+    <h2>{{ team_name }} Playsheet</h2>
+    
+    <div class="playsheet-layout">
+        <table id="playsheet">
+            <tr>
+                <th>1</th>
+                <th>2</th>
+                <th>3</th>
+                <th>4</th>
+                <th>5</th>
+                <th>6</th>
+                <th>7</th>
+                <th>8</th>
+                <th>SO</th>
+            </tr>
+            <tr>
+                <td>PLUNGE</td>
+                <td>TACKLE</td>
+                <td>RUN</td>
+                <td>DRAW</td>
+                <td>SHORT</td>
+                <td>MEDIUM</td>
+                <td>LONG</td>
+                <td>SIDE</td>
+                <td>LINE</td>
+            </tr>
+            <!-- Add more rows as needed -->
+        </table>
+
+        <div id="outcomes-panel" class="outcomes-panel">
+            <h3>Play Outcomes</h3>
+            <div class="outcomes-grid" id="outcomes-grid">
+                <!-- Outcomes will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <button id="runPlay" disabled>Run Selected Play</button>
+</div>
+
+<style>
+    .playsheet-container {
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    h2 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #e31837;  /* Chiefs' red */
+    }
+
+    .playsheet-layout {
+        display: flex;
+        gap: 20px;
+    }
+
+    #playsheet {
+        flex: 1;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+
+    #playsheet th, #playsheet td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+        cursor: pointer;
+    }
+
+    #playsheet td.selected {
+        background-color: #ffeb3b;
+    }
+
+    .outcomes-panel {
+        flex: 1;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background-color: #f9f9f9;
+    }
+
+    .outcomes-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+
+    .outcome-item {
+        padding: 5px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        text-align: center;
+        background-color: white;
+    }
+
+    #runPlay {
+        padding: 10px 20px;
+        background-color: #e31837;  /* Chiefs' red */
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 20px;
+        width: 200px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    #runPlay:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+    }
+</style>
+
+<script>
+    const teamName = '{{ team_name }}';
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const table = document.getElementById('playsheet');
+        const runPlayButton = document.getElementById('runPlay');
+        const outcomesGrid = document.getElementById('outcomes-grid');
+        let selectedCell = null;
+
+        function displayOutcomes(outcomes) {
+            outcomesGrid.innerHTML = '';
+            if (!outcomes) return;
+
+            for (let roll = 10; roll <= 39; roll++) {
+                const outcome = outcomes[roll] || 'N/A';
+                const outcomeDiv = document.createElement('div');
+                outcomeDiv.className = 'outcome-item';
+                outcomeDiv.innerHTML = `<strong>${roll}:</strong> ${outcome}`;
+                outcomesGrid.appendChild(outcomeDiv);
+            }
+        }
+
+        table.addEventListener('click', function(e) {
+            if (e.target.tagName === 'TD') {
+                if (selectedCell) {
+                    selectedCell.classList.remove('selected');
+                }
+                
+                e.target.classList.add('selected');
+                selectedCell = e.target;
+                runPlayButton.disabled = false;
+
+                // Fetch and display outcomes for the selected play
+                const play = selectedCell.textContent;
+                fetch(`/get_outcomes/${teamName}/${play}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        displayOutcomes(data.outcomes);
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+            }
+        });
+
+        runPlayButton.addEventListener('click', function() {
+            if (selectedCell) {
+                const play = selectedCell.textContent;
+                fetch('/run_play', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        play: play
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert('Play executed: ' + play);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+        });
+    });
+</script>
+{% endblock %} 

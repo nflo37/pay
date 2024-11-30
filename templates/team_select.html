@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Select Teams</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="team-select-container">
+        <h1>Select Teams</h1>
+        <form action="{{ url_for('start_game') }}" method="POST">
+            <div class="team-select">
+                <label>Team 1:</label>
+                <select name="team1" required>
+                    {% for team in available_teams %}
+                    <option value="{{ team }}">{{ team }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="team-select">
+                <label>Team 2:</label>
+                <select name="team2" required>
+                    {% for team in available_teams %}
+                    <option value="{{ team }}">{{ team }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit">Start Game</button>
+        </form>
+    </div>
+</body>
+</html> 

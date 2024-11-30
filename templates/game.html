@@ -5,59 +5,123 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <div class="football-field">
-        <!-- Ball position indicator -->
-        <div class="ball-position" style="left: {{ (game.position / 100) * 800 }}px; top: 50%;"></div>
-        
-        <!-- Yard lines (we'll generate every 10 yards) -->
-        {% for yard in range(0, 101, 10) %}
-            <div class="yard-line" style="left: {{ (yard / 100) * 800 }}px"></div>
-            <div class="yard-number" style="left: {{ (yard / 100) * 800 }}px">{{ yard }}</div>
-        {% endfor %}
-    </div>
-
-    <!-- Existing game information -->
-    <div class="game-info">
-        <p>Down: {{ game.down }}</p>
-        <p>Yards to Go: {{ game.yards_to_go }}</p>
-        <p>Position: {{ game.position }}</p>
-        <p>Score: {{ game.score_home }} - {{ game.score_away }}</p>
-        <p>Possession: {{ game.possession }}</p>
-    </div>
-
-    <!-- Existing play buttons -->
-    <form action="{{ url_for('move') }}" method="post">
-        <button type="submit" name="play_type" value="run">Run</button>
-        <button type="submit" name="play_type" value="pass">Pass</button>
-        <!-- Add more play types here -->
-    </form>
-
-    <form action="{{ url_for('reset') }}" method="post">
-        <button type="submit">Reset Game</button>
-    </form>
-
-    <div class="play-sheet">
-        <div class="play-section running-plays">
-            <h3>Running Plays</h3>
-            <div class="play-list">
-                {% for play_name in game.play_chart.get_available_plays('run') %}
-                <button class="play-button" data-play-type="run" data-play-name="{{ play_name }}">
-                    {{ play_name }}
-                </button>
-                {% endfor %}
+    <div class="game-container">
+        <div class="scoreboard">
+            <div class="team team1">
+                <h3>{{ game.team1 }}</h3>
+                <p>Score: {{ game.team1_score }}</p>
+            </div>
+            <div class="game-info">
+                <p>Down: {{ game.down }}</p>
+                <p>Yards to Go: {{ game.yards_to_go }}</p>
+                <p>Ball on: {{ game.position }}</p>
+                <p>Offense: {{ game.offense }}</p>
+            </div>
+            <div class="team team2">
+                <h3>{{ game.team2 }}</h3>
+                <p>Score: {{ game.team2_score }}</p>
             </div>
         </div>
-        
-        <div class="play-section passing-plays">
-            <h3>Passing Plays</h3>
-            <div class="play-list">
-                {% for play_name in game.play_chart.get_available_plays('pass') %}
-                <button class="play-button" data-play-type="pass" data-play-name="{{ play_name }}">
-                    {{ play_name }}
-                </button>
-                {% endfor %}
+
+        <div class="football-field">
+            {% for yard in range(0, 101, 10) %}
+            <div class="yard-line" style="left: {{ yard }}%;"></div>
+            <div class="yard-number" style="left: {{ yard }}%;">{{ yard }}</div>
+            {% endfor %}
+            <div class="ball-position" style="left: {{ game.position }}%;"></div>
+        </div>
+
+        <div id="play-result" class="play-result"></div>
+
+        {% set playsheet, is_offense = game.current_playsheet %}
+        <div class="playsheet-container">
+            <div class="playsheet-header">
+                <h2>{{ "Offensive" if is_offense else "Defensive" }} Playsheet</h2>
+                <button id="runPlay" disabled>Ready</button>
+            </div>
+            <div class="playsheet">
+                <table id="playsheet">
+                    <thead>
+                        <tr>
+                            <th>Roll</th>
+                            {% if is_offense %}
+                                {% for play in ['PLUNGE', 'TACKLE', 'RUN', 'DRAW', 'SHORT', 'MEDIUM', 'LONG', 'SIDE', 'LINE'] %}
+                                    <th class="play-type">{{ play }}</th>
+                                {% endfor %}
+                            {% else %}
+                                {% for formation in ['STD', 'BLITZ', 'PREVENT'] %}
+                                    <th class="play-type">{{ formation }}</th>
+                                {% endfor %}
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if is_offense %}
+                            {% for roll in range(10, 40) %}
+                            <tr>
+                                <td>{{ roll }}</td>
+                                {% for play in ['PLUNGE', 'TACKLE', 'RUN', 'DRAW', 'SHORT', 'MEDIUM', 'LONG', 'SIDE', 'LINE'] %}
+                                    <td>{{ playsheet.offensive_plays[play][roll|string] }}</td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            {% for roll in range(1, 6) %}
+                            <tr>
+                                <td>{{ roll }}</td>
+                                {% for formation in ['STD', 'BLITZ', 'PREVENT'] %}
+                                    <td>
+                                        {% for play in playsheet.defensive_plays[formation] %}
+                                            {{ play }}: {{ playsheet.defensive_plays[formation][play][roll|string] }}<br>
+                                        {% endfor %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const playsheet = document.getElementById('playsheet');
+            const runPlayButton = document.getElementById('runPlay');
+            let selectedPlay = null;
+
+            playsheet.querySelectorAll('.play-type').forEach(header => {
+                header.addEventListener('click', function() {
+                    playsheet.querySelectorAll('.play-type').forEach(h => h.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedPlay = this.textContent;
+                    runPlayButton.disabled = false;
+                });
+            });
+
+            runPlayButton.addEventListener('click', function() {
+                if (selectedPlay) {
+                    fetch('/run_play', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            play: selectedPlay
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        const playResult = document.getElementById('play-result');
+                        playResult.innerHTML = `${data.result.message} <span class="roll-display">(Roll: ${data.result.roll})</span>`;
+                        setTimeout(() => {
+                            location.reload();
+                        }, 2000);
+                    });
+                }
+            });
+        });
+    </script>
 </body>
 </html>
