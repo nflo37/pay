@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Football Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="football-field">
+        <!-- Ball position indicator -->
+        <div class="ball-position" style="left: {{ (game.position / 100) * 800 }}px; top: 50%;"></div>
+        
+        <!-- Yard lines (we'll generate every 10 yards) -->
+        {% for yard in range(0, 101, 10) %}
+            <div class="yard-line" style="left: {{ (yard / 100) * 800 }}px"></div>
+            <div class="yard-number" style="left: {{ (yard / 100) * 800 }}px">{{ yard }}</div>
+        {% endfor %}
+    </div>
+
+    <!-- Existing game information -->
+    <div class="game-info">
+        <p>Down: {{ game.down }}</p>
+        <p>Yards to Go: {{ game.yards_to_go }}</p>
+        <p>Position: {{ game.position }}</p>
+        <p>Score: {{ game.score_home }} - {{ game.score_away }}</p>
+        <p>Possession: {{ game.possession }}</p>
+    </div>
+
+    <!-- Existing play buttons -->
+    <form action="{{ url_for('move') }}" method="post">
+        <button type="submit" name="play_type" value="run">Run</button>
+        <button type="submit" name="play_type" value="pass">Pass</button>
+        <!-- Add more play types here -->
+    </form>
+
+    <form action="{{ url_for('reset') }}" method="post">
+        <button type="submit">Reset Game</button>
+    </form>
+
+    <div class="play-sheet">
+        <div class="play-section running-plays">
+            <h3>Running Plays</h3>
+            <div class="play-list">
+                {% for play_name in game.play_chart.get_available_plays('run') %}
+                <button class="play-button" data-play-type="run" data-play-name="{{ play_name }}">
+                    {{ play_name }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="play-section passing-plays">
+            <h3>Passing Plays</h3>
+            <div class="play-list">
+                {% for play_name in game.play_chart.get_available_plays('pass') %}
+                <button class="play-button" data-play-type="pass" data-play-name="{{ play_name }}">
+                    {{ play_name }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

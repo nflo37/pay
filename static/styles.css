@@ -1,0 +1,50 @@
+.football-field {
+    width: 800px;
+    height: 400px;
+    background-color: #2e7d32; /* Football field green */
+    position: relative;
+    margin: 20px auto;
+    border: 2px solid white;
+}
+
+.yard-line {
+    position: absolute;
+    width: 2px;
+    height: 100%;
+    background-color: white;
+}
+
+.yard-number {
+    position: absolute;
+    color: white;
+    font-size: 14px;
+}
+
+.ball-position {
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    background-color: #8b4513; /* Brown football color */
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.play-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.play-button {
+    padding: 10px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.2s;
+}
+
+.play-button:hover {
+    background-color: #f0f0f0;
+} 

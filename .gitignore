@@ -1,0 +1,9 @@
+# Create .gitignore file
+touch .gitignore
+
+# Add these contents to .gitignore:
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+.env
